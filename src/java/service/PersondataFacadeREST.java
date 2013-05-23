@@ -17,6 +17,8 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.SecurityContext;
 
 /**
  *
@@ -25,6 +27,8 @@ import javax.ws.rs.Produces;
 @Stateless
 @Path("dk.cphbusiness.services.persondata")
 public class PersondataFacadeREST extends AbstractFacade<Persondata> {
+    static private int choirCount;
+    static private int otherCount;
     @PersistenceContext(unitName = "WebServiceWannabeKrakPU")
     private EntityManager em;
 
@@ -55,8 +59,20 @@ public class PersondataFacadeREST extends AbstractFacade<Persondata> {
     @GET
     @Path("Phone/{nr}")
     @Produces({"application/json"})
-    public Persondata find(@PathParam("nr") String nr) {
+    public Persondata find(@Context SecurityContext con, @PathParam("nr") String nr) {
+        if(con.getUserPrincipal().getName().equals("NorthseaChoir")){
+            choirCount++;
+        }else{
+            otherCount++;
+        }
         return (Persondata)em.createNamedQuery("Persondata.findByPhone").setParameter("phone", nr).getSingleResult();
+    }
+    
+    @GET
+    @Path("Count/")
+    @Produces({"application/json"})
+    public String getCount(){
+        return "ChoirCount: " + choirCount + ", OtherCount: " + otherCount;
     }
 
     @GET
@@ -73,16 +89,10 @@ public class PersondataFacadeREST extends AbstractFacade<Persondata> {
         return super.findRange(new int[]{from, to});
     }
 
-    @GET
-    @Path("count")
-    @Produces("text/plain")
-    public String countREST() {
-        return String.valueOf(super.count());
-    }
-
     @Override
     protected EntityManager getEntityManager() {
         return em;
     }
+    
     
 }
